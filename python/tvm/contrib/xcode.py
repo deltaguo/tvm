@@ -26,6 +26,23 @@ from .._ffi.base import py_str
 from . import utils
 
 
+from .._ffi import register_func
+import tempfile
+from pathlib import Path
+
+def ios_create_dylib(output, objects, **kwargs):  # pylint: disable=unused-argument
+    create_dylib(output, objects, arch="arm64", sdk="iphoneos")
+    
+ios_create_dylib.output_format = "dylib"
+
+@register_func("meta_schedule.builder.export_ios")
+def _ios_export(mod):
+    tmp_dir = tempfile.mkdtemp()
+    binary_name = "tmp_binary.dylib"
+    binary_path = Path(tmp_dir) / binary_name
+    mod.export_library(binary_path, fcompile=ios_create_dylib)
+    return str(binary_path)
+
 def xcrun(cmd):
     """Run xcrun and return the output.
 
@@ -43,7 +60,6 @@ def xcrun(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     (out, _) = proc.communicate()
     return out.strip()
-
 
 def __get_min_os_version(sdk):
     if sdk == "macosx":

@@ -360,7 +360,11 @@ class ThreadGroup::Impl {
 
 ThreadGroup::ThreadGroup(int num_workers, std::function<void(int)> worker_callback,
                          bool exclude_worker0)
-    : impl_(new ThreadGroup::Impl(num_workers, worker_callback, exclude_worker0)) {}
+    : impl_(new ThreadGroup::Impl(num_workers, worker_callback, exclude_worker0)) {
+      const char* val = getenv("TVM_NUM_THREADS"); 
+      if (val == nullptr) val = getenv("OMP_NUM_THREADS"); 
+      tvm::runtime::threading::SetMaxConcurrency(val != nullptr ? atoi(val) : num_workers);
+    }
 ThreadGroup::~ThreadGroup() { delete impl_; }
 void ThreadGroup::Join() { impl_->Join(); }
 

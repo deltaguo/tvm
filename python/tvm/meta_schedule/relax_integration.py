@@ -350,6 +350,34 @@ def _tune_relax(
         max_trials_global = int(max_trials_global)
     if isinstance(max_trials_per_task, IntImm):
         max_trials_per_task = int(max_trials_per_task)
+        
+    import tvm.meta_schedule as ms 
+    def get_runner(rpc_host: str, rpc_port: int, rpc_key: str): 
+        runner_config = { 
+            "evaluator_config": ms.runner.EvaluatorConfig( 
+            number=3, 
+            repeat=1, 
+            min_repeat_ms=100, 
+            enable_cpu_cache_flush=False, 
+            ), 
+            "alloc_repeat": 1, 
+        } 
+        rpc_config = ms.runner.RPCConfig( 
+            tracker_host=rpc_host, 
+            tracker_port=rpc_port, 
+            tracker_key=rpc_key, 
+            session_timeout_sec=180, 
+        ) 
+        workers = rpc_config.count_num_servers(allow_missing=False) 
+        runner = ms.runner.RPCRunner( 
+            rpc_config=rpc_config, max_workers=workers, **runner_config 
+        ) 
+        return runner 
+    from tvm.meta_schedule.builder import LocalBuilder 
+    # builder = LocalBuilder(f_export="meta_schedule.builder.export_ndk", max_workers=1) 
+    # runner = get_runner("30.21.26.13", 9190, "android") 
+    builder = LocalBuilder(f_export="meta_schedule.builder.export_ios", max_workers=1) 
+    runner = get_runner("30.21.26.10", 9190, "ios") 
 
     tune_relax(
         mod,
@@ -380,7 +408,7 @@ def compile_relax(
     database: Database,
     mod: IRModule,
     target: Union[Target, str],
-    params: Optional[Dict[str, NDArray]],
+    params: Optional[Dict[str, NDArray]] = [],
     enable_warning: bool = False,
 ) -> "relax.Executable":
     """Compile a relax program with a MetaSchedule database.

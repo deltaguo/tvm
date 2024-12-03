@@ -530,5 +530,5 @@ def default_cleanup(
     """
     if session is not None and remote_path is not None:
         session.remove(remote_path)
-        session.remove(remote_path + ".so")
-        session.remove("")
+        # session.remove(remote_path + ".so")
+        # session.remove("")
